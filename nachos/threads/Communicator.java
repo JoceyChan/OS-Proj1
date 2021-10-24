@@ -27,27 +27,7 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
-    	mutex.acquire();
-    	// while there is a word in the buffer
-    	while(wordToBeHeard){ //will wake up listener and speaker will sleep
-    		listener.wake();
-    		speaker.sleep();
-    	}
-    	this.word = word;
-
-    	// notes that buffer is full
-    	wordToBeHeard = true;
-
-    	//wake the listener and put speaker to sleep
-    	listener.wake();
-    	speaker.sleep();
-
-    	lock.Release();
-
-
     }
-    this.word = word;
-
 
     /**
      * Wait for a thread to speak through this communicator, and then return
@@ -58,19 +38,4 @@ public class Communicator {
     public int listen() {
 	return 0;
     }
-    
- // buffer to pass word
-    private int word;
-
-    // lock for condition variables and to maintain atomicity
-    private Lock mutex = new Lock;
-
-    // declare condition variable for listeners here //mutex = lock
-    private Condition2 listener = new Condition2(mutex);
-
-    // declare condition variable for speakers here
-    private Condition2 speaker = new Condition2(mutex);
-
-    
-    
 }
