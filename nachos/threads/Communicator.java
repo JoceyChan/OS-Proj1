@@ -27,6 +27,23 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+    	lock.acquire(); 
+    	
+    	// while there is a word in buffer
+    	while(wordToBeHeard) {
+    		listener.wake();
+    		speaker.sleep();
+    	}
+    	
+    	this.word = word;
+    	
+    	//buffer is now full
+    	wordToBeHeard = true;
+    	
+    	listener.wake();
+    	speaker.sleep();
+    	
+    	lock.release();
     }
 
     /**
