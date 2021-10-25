@@ -38,4 +38,19 @@ public class Communicator {
     public int listen() {
 	return 0;
     }
+    
+    private boolean wordToBeHeard = false;
+    
+	// buffer to pass word
+	private int word;
+	
+	// lock for condition variables and to maintain atomicity
+	private Lock lock = new Lock();
+	
+	// declare condition variable for listeners here
+	private Condition listener = new Condition(lock); 
+	
+	// declare condition variable for speakers here
+	private Condition speaker = new Condition(lock); 
+
 }
