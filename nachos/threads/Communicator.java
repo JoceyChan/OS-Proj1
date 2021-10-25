@@ -53,7 +53,24 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-	return 0;
+    	lock.acquire();
+    	
+    	// while there is no word in buffer
+    	while(!wordToBeHeard) {
+    		speaker.wake();
+    		listener.sleep();
+    	}
+    	
+    	int wordToHear = word;
+    	
+    	// resets buffer to empty
+    	wordToBeHeard = false;
+    	
+    	speaker.wake();
+
+    	lock.release();
+    	
+	return wordToHear;
     }
     
     private boolean wordToBeHeard = false;
