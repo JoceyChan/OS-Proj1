@@ -418,6 +418,37 @@ public class UserProcess {
 	    return 0;
     }
 
+    /** 
+    * Opens a file, and creates the file if it does not already exist
+    *
+    * @param a: the address of the 
+    *
+    */
+    public int handleCreate(int a){
+        if(a < 0){
+            return -1;
+        }
+        String fileName = readVirtualMemoryString(myAddr, 256); // pulling the name of the file
+    	if(fileName == null)
+            OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, true);
+        else
+            OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, false);
+
+        for(int i = 0; i < 16; i++) {
+    		if(myFileSlots[i] == null) {
+    			myFileSlots[i] = tFile; // if the slot is empty then we place the opened file
+    			// if(myFileSlots[i] != null) {
+    			// 	return i;
+    			// }
+                return i;
+    		}    		
+    	}
+        //no open slots available
+        tFile.close();
+        return -1;
+    }
+
+
     /**
      * Handle a user exception. Called by
      * <tt>UserKernel.exceptionHandler()</tt>. The
