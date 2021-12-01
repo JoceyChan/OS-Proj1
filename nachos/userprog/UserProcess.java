@@ -348,7 +348,7 @@ public class UserProcess {
 
 
     private static final int
-        syscallHalt = 0,
+    syscallHalt = 0,
 	syscallExit = 1,
 	syscallExec = 2,
 	syscallJoin = 3,
@@ -388,16 +388,34 @@ public class UserProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
-	switch (syscall) {
-	case syscallHalt:
-	    return handleHalt();
+        switch (syscall) {
+            case syscallHalt:
+                return handleHalt();
+            
+            case syscallCreate:
+                return handleCreate(a0);
 
+            case syscallOpen:
+                return handleOpen(a0);
 
-	default:
-	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
-	    Lib.assertNotReached("Unknown system call!");
-	}
-	return 0;
+            case syscallRead:
+                return handleRead(a0,a1,a2);
+
+            case syscallWrite:
+                return handleWrite(a0,a1,a2);
+
+            case syscallClose:
+                return handleClose(a0);
+
+            case syscallUnlink:
+                String vaddr_string = readVirtualMemoryString(a0,MAX_LENGTH);
+                return handleUnlink(vaddr_string);
+                
+            default:
+                Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+                Lib.assertNotReached("Unknown system call!");
+        }
+	    return 0;
     }
 
     /**
