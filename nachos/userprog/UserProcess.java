@@ -520,7 +520,7 @@ public class UserProcess {
     		
 		myFiles[fileDescriptor].close();
 		myFiles[fileDescriptor] = null;
-		return 1;
+		return 0;
     }
 	
     public int handleWrite(int a0, int a1, int a2) {
