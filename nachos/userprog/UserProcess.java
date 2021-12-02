@@ -472,6 +472,32 @@ public class UserProcess {
     	return numBytesRead;
     }
 
+    public int handleWrite(int a0, int a1, int a2) {
+		if ((a0 < 0) || (a0 > 15)) {
+			return -1;
+		}
+		
+		//question about this thing
+		if (a1 == 0) {
+			return -1;
+		}
+		
+		byte[] vaddr_content = new byte[a2];
+		
+		int page_buffer = readVirtualMemory(a0,vaddr_content);
+		
+		if ((page_buffer == -1) || (page_buffer != a2)) {
+			return -1;
+		} 
+		
+		int numBytesWrite = myFiles[a0].write(vaddr_content,0,a2);
+		
+		if ((numBytesWrite <= 0) || (page_buffer != numBytesWrite)) {
+			return -1;
+		}
+		
+    	return numBytesWrite;
+    }
 
     /**
      * Handle a user exception. Called by
