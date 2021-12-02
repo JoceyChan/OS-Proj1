@@ -23,6 +23,9 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+	myFiles = new OpenFile[16];
+	myFiles[0] = UserKernel.console.openForReading(); 
+	myFiles[1] = UserKernel.console.openForWriting();
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
@@ -597,7 +600,7 @@ public class UserProcess {
 
 	int MAX_LENGTH = 255;			    // max length in terms of bytes
 	int MAX_SLOTS = 16;			    // max slots for concurrency
-	OpenFile[] myFiles = new OpenFile[16];   // array of 16 OpenFiles
+	OpenFile[] myFiles;   // array of 16 OpenFiles
 
     /** The program being run by this process. */
     protected Coff coff;
