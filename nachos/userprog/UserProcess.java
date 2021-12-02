@@ -507,6 +507,231 @@ public class UserProcess {
 			Lib.debug(dbgProcess, "Unexpected exception: " + Processor.exceptionNames[cause]);
 			Lib.assertNotReached("Unexpected exception");
 		}
+
+	return true;
+    }
+
+    /**
+     * Release any resources allocated by <tt>loadSections()</tt>.
+     */
+    protected void unloadSections() {
+    }    
+
+    /**
+     * Initialize the processor's registers in preparation for running the
+     * program loaded into this process. Set the PC register to point at the
+     * start function, set the stack pointer register to point at the top of
+     * the stack, set the A0 and A1 registers to argc and argv, respectively,
+     * and initialize all other registers to 0.
+     */
+    public void initRegisters() {
+	Processor processor = Machine.processor();
+
+	// by default, everything's 0
+	for (int i=0; i<processor.numUserRegisters; i++)
+	    processor.writeRegister(i, 0);
+
+	// initialize PC and SP according
+	processor.writeRegister(Processor.regPC, initialPC);
+	processor.writeRegister(Processor.regSP, initialSP);
+
+	// initialize the first two argument registers to argc and argv
+	processor.writeRegister(Processor.regA0, argc);
+	processor.writeRegister(Processor.regA1, argv);
+    }
+
+    /**
+     * Handle the halt() system call. 
+     */
+    private int handleHalt() {
+
+	Machine.halt();
+	
+	Lib.assertNotReached("Machine.halt() did not halt machine!");
+	return 0;
+    }
+
+
+    private static final int
+    syscallHalt = 0,
+	syscallExit = 1,
+	syscallExec = 2,
+	syscallJoin = 3,
+	syscallCreate = 4,
+	syscallOpen = 5,
+	syscallRead = 6,
+	syscallWrite = 7,
+	syscallClose = 8,
+	syscallUnlink = 9;
+
+    /**
+     * Handle a syscall exception. Called by <tt>handleException()</tt>. The
+     * <i>syscall</i> argument identifies which syscall the user executed:
+     *
+     * <table>
+     * <tr><td>syscall#</td><td>syscall prototype</td></tr>
+     * <tr><td>0</td><td><tt>void halt();</tt></td></tr>
+     * <tr><td>1</td><td><tt>void exit(int status);</tt></td></tr>
+     * <tr><td>2</td><td><tt>int  exec(char *name, int argc, char **argv);
+     * 								</tt></td></tr>
+     * <tr><td>3</td><td><tt>int  join(int pid, int *status);</tt></td></tr>
+     * <tr><td>4</td><td><tt>int  creat(char *name);</tt></td></tr>
+     * <tr><td>5</td><td><tt>int  open(char *name);</tt></td></tr>
+     * <tr><td>6</td><td><tt>int  read(int fd, char *buffer, int size);
+     *								</tt></td></tr>
+     * <tr><td>7</td><td><tt>int  write(int fd, char *buffer, int size);
+     *								</tt></td></tr>
+     * <tr><td>8</td><td><tt>int  close(int fd);</tt></td></tr>
+     * <tr><td>9</td><td><tt>int  unlink(char *name);</tt></td></tr>
+     * </table>
+     * 
+     * @param	syscall	the syscall number.
+     * @param	a0	the first syscall argument.
+     * @param	a1	the second syscall argument.
+     * @param	a2	the third syscall argument.
+     * @param	a3	the fourth syscall argument.
+     * @return	the value to be returned to the user.
+     */
+    public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
+        switch (syscall) {
+            case syscallHalt:
+                return handleHalt();
+            
+            case syscallCreate:
+                return handleCreate(a0);
+
+            case syscallOpen:
+                return handleOpen(a0);
+
+            case syscallRead:
+                return handleRead(a0,a1,a2);
+
+            case syscallWrite:
+                return handleWrite(a0,a1,a2);
+
+            case syscallClose:
+                return handleClose(a0);
+
+            case syscallUnlink:
+                String vaddr_string = readVirtualMemoryString(a0,MAX_LENGTH);
+                return handleUnlink(vaddr_string);
+                
+            default:
+                Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+                Lib.assertNotReached("Unknown system call!");
+        }
+	    return 0;
+    }
+
+    /** 
+    * Opens a file, and creates the file if it does not already exist
+    *
+    * @param a: the address of the 
+    *
+    */
+    public int handleCreate(int a){
+        if(a < 0){
+            return -1;
+        }
+        String fileName = readVirtualMemoryString(a, MAX_LENGTH+1); // pulling the name of the file
+        OpenFile tFile;
+    	if(fileName == null){
+            tFile = ThreadedKernel.fileSystem.open(fileName, true);
+        }
+        else{
+            tFile = ThreadedKernel.fileSystem.open(fileName, false);
+        }
+
+        for(int i = 0; i < MAX_SLOTS; i++) {
+    		if(myFiles[i] == null) {
+    			myFiles[i] = tFile; // if the slot is empty then we place the opened file
+    			// if(myFileSlots[i] != null) {
+    			// 	return i;
+    			// }
+                return i;
+    		}    		
+    	}
+        //no open slots available
+        // tFile.close();
+        return -1;
+    }
+	
+	public int handleRead(int slotNum, int vaddr, int numBytes) {
+    	if(slotNum < 0 || slotNum > 15) {
+    		return -1;
+    	}
+    	if(vaddr == 0) {
+    		return -1;
+    	}
+    	
+    	byte[] vaddr_content = new byte[numBytes];
+    	
+    	int numBytesRead = myFiles[slotNum].read(vaddr_content, 0, numBytes);
+    	
+    	if(numBytesRead <= 0) {
+    		return -1;
+    	}
+    	
+    	writeVirtualMemory(vaddr, vaddr_content);
+    	
+    	return numBytesRead;
+    }
+
+    public int handleWrite(int a0, int a1, int a2) {
+		if ((a0 < 0) || (a0 > 15)) {
+			return -1;
+		}
+		
+		//question about this thing
+		if (a1 == 0) {
+			return -1;
+		}
+		
+		byte[] vaddr_content = new byte[a2];
+		
+		int page_buffer = readVirtualMemory(a0,vaddr_content);
+		
+		if ((page_buffer == -1) || (page_buffer != a2)) {
+			return -1;
+		} 
+		
+		int numBytesWrite = myFiles[a0].write(vaddr_content,0,a2);
+		
+		if ((numBytesWrite <= 0) || (page_buffer != numBytesWrite)) {
+			return -1;
+		}
+		
+    	return numBytesWrite;
+    }
+
+    /**
+     * Handle a user exception. Called by
+     * <tt>UserKernel.exceptionHandler()</tt>. The
+     * <i>cause</i> argument identifies which exception occurred; see the
+     * <tt>Processor.exceptionZZZ</tt> constants.
+     *
+     * @param	cause	the user exception that occurred.
+     */
+    public void handleException(int cause) {
+	Processor processor = Machine.processor();
+
+	switch (cause) {
+	case Processor.exceptionSyscall:
+	    int result = handleSyscall(processor.readRegister(Processor.regV0),
+				       processor.readRegister(Processor.regA0),
+				       processor.readRegister(Processor.regA1),
+				       processor.readRegister(Processor.regA2),
+				       processor.readRegister(Processor.regA3)
+				       );
+	    processor.writeRegister(Processor.regV0, result);
+	    processor.advancePC();
+	    break;				       
+				       
+	default:
+	    Lib.debug(dbgProcess, "Unexpected exception: " +
+		      Processor.exceptionNames[cause]);
+	    Lib.assertNotReached("Unexpected exception");
+
 	}
 
 	int MAX_LENGTH = 255; // max length in terms of bytes
