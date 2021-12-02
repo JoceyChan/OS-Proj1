@@ -450,6 +450,27 @@ public class UserProcess {
         // tFile.close();
         return -1;
     }
+	
+	public int handleRead(int slotNum, int vaddr, int numBytes) {
+    	if(slotNum < 0 || slotNum > 15) {
+    		return -1;
+    	}
+    	if(vaddr == 0) {
+    		return -1;
+    	}
+    	
+    	byte[] vaddr_content = new byte[numBytes];
+    	
+    	int numBytesRead = myFiles[slotNum].read(vaddr_content, 0, numBytes);
+    	
+    	if(numBytesRead <= 0) {
+    		return -1;
+    	}
+    	
+    	writeVirtualMemory(vaddr, vaddr_content);
+    	
+    	return numBytesRead;
+    }
 
 
     /**
