@@ -408,7 +408,6 @@ public class UserProcess {
                 return handleClose(a0);
 
             case syscallUnlink:
-                String vaddr_string = readVirtualMemoryString(a0,MAX_LENGTH);
                 return handleUnlink(vaddr_string);
                 
             default:
@@ -498,6 +497,27 @@ public class UserProcess {
 		
     	return numBytesWrite;
     }
+
+	/**
+	 * Attempts to remove the file and returns 0 if removal was successful, otherwise -1.
+	 * 
+	 * @param vaddr the address for the file to remove
+	 * 
+	 */
+	public int handleUnlink(int vaddr) {
+		if (vaddr < 0) {
+			return -1;
+		}
+		
+		String vaddr_str = readVirtualMemoryString(vaddr, MAX_LENGTH);
+		Boolean was_removed = ThreadedKernel.fileSystem.remove(vaddr_str);
+		
+		if (!was_removed) {
+			return -1;
+		}
+		
+		return 0;
+	}
 
     /**
      * Handle a user exception. Called by
