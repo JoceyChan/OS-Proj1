@@ -23,6 +23,7 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+    	myFileSlots = new OpenFile[16];   // iizalized it cause of the docs 
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
@@ -40,6 +41,43 @@ public class UserProcess {
 	return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
     }
 
+    protected OpenFile[] myFileSlots; // declaring global variables 
+    private int handleOpen(int myAddr) { //myAddr is to find the name
+     // find virtual memory function 
+    	if(myAddr < 0) { //smaller than 0 means that it is invalid
+    		return -1;
+    	}
+    	// we have to get myadd, 256 and name it file this will call the string 
+    	String fileName = readVirtualMemoryString(myAddr, 256); // pulling the name of the file
+    	if(fileName == null) {
+    		return -1;
+    	}
+    	
+    	OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, false); // declare Open File as a global variable from the threads 
+    	//open is false to create it is true
+    	// check if file is empty 
+    	if(tFile == null) {
+    		return -1;
+    	}
+    // iterate through file (16 files)
+    	for(int i = 0; i < 16; i++) {
+    		if(myFileSlots[i] == null) {
+    			myFileSlots[i] = tFile; // if the slot is empty then we place the opened file
+    			if(myFileSlots[i] != null) {
+    				return i;
+    			}
+    			else {
+    				tFile.close();
+    				return -1;
+    			}
+    		}
+    		
+    	}
+    	
+    	//check if file is empty 
+    	tFile.close();
+    	return -1;
+    }
     /**
      * Execute the specified program with the specified arguments. Attempts to
      * load the program, and then forks a thread to run it.
