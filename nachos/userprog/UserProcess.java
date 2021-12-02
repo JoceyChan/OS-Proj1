@@ -479,6 +479,10 @@ public class UserProcess {
 	}
     }
 
+	int MAX_LENGTH = 255			    // max length in terms of bytes
+	int MAX_SLOTS = 16			    // max slots for concurrency
+	OpenFile myFiles = new OpenFile[16];   // array of 16 OpenFiles
+
     /** The program being run by this process. */
     protected Coff coff;
 
