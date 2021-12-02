@@ -428,15 +428,15 @@ public class UserProcess {
         if(a < 0){
             return -1;
         }
-        String fileName = readVirtualMemoryString(myAddr, 256); // pulling the name of the file
+        String fileName = readVirtualMemoryString(a, MAX_LENGTH+1); // pulling the name of the file
     	if(fileName == null)
             OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, true);
         else
             OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, false);
 
-        for(int i = 0; i < 16; i++) {
-    		if(myFileSlots[i] == null) {
-    			myFileSlots[i] = tFile; // if the slot is empty then we place the opened file
+        for(int i = 0; i < MAX_SLOTS; i++) {
+    		if(myFiles[i] == null) {
+    			myFiles[i] = tFile; // if the slot is empty then we place the opened file
     			// if(myFileSlots[i] != null) {
     			// 	return i;
     			// }
