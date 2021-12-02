@@ -505,9 +505,12 @@ public class UserProcess {
     		return -1;
     	}
     	
-    	writeVirtualMemory(vaddr, vaddr_content);
+    	int writeVM = writeVirtualMemory(vaddr, vaddr_content);
     	
-    	return numBytesRead;
+    	if(writeVM == numBytesRead){
+		return numBytesRead;
+	}
+		return -1;
     }
 
     private int handleClose(int fileDescriptor) {	
