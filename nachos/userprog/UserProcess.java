@@ -437,11 +437,11 @@ public class UserProcess {
             case syscallWrite:
                 return handleWrite(a0,a1,a2);
 
-            case syscallClose:
-                return handleClose(a0);
+            // case syscallClose:
+            //     return handleClose(a0);
 
             case syscallUnlink:
-                return handleUnlink(vaddr_string);
+                return handleUnlink(a0);
                 
             default:
                 Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -460,22 +460,25 @@ public class UserProcess {
         if(a < 0){
             return -1;
         }
-        String fileName = readVirtualMemoryString(a, MAX_LENGTH+1); // pulling the name of the file
-        OpenFile tFile;
-    	if(fileName == null){
-            tFile = ThreadedKernel.fileSystem.open(fileName, true);
-        }
-        else{
-            tFile = ThreadedKernel.fileSystem.open(fileName, false);
+        String fileName = readVirtualMemoryString(a, MAX_LENGTH); // pulling the name of the file
+		if(fileName == null){
+			return -1;
+		}
+
+
+        OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, false);
+    	if(tFile != null){
+			tFile.close();
+			return -1;
         }
 
         for(int i = 0; i < MAX_SLOTS; i++) {
     		if(myFiles[i] == null) {
-    			myFiles[i] = tFile; // if the slot is empty then we place the opened file
-    			// if(myFileSlots[i] != null) {
-    			// 	return i;
-    			// }
-                return i;
+    			myFiles[i] = ThreadedKernel.fileSystem.open(fileName, true); // if the slot is empty then we place the opened file
+    			if(myFiles[i] != null) {
+    				return i;
+    			}
+                return -1;
     		}    		
     	}
         //no open slots available
@@ -504,6 +507,16 @@ public class UserProcess {
     	return numBytesRead;
     }
 
+    private int handleClose(int fileDescriptor) {	
+    	if(fileDescriptor <= 1 || myFiles[fileDescriptor] == null) {
+    		return -1;
+    	}
+    		
+		myFiles[fileDescriptor].close();
+		myFiles[fileDescriptor] = null;
+		return 1;
+    }
+	
     public int handleWrite(int a0, int a1, int a2) {
 		if ((a0 < 0) || (a0 > 15)) {
 			return -1;
