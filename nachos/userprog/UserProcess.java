@@ -429,10 +429,13 @@ public class UserProcess {
             return -1;
         }
         String fileName = readVirtualMemoryString(a, MAX_LENGTH+1); // pulling the name of the file
-    	if(fileName == null)
-            OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, true);
-        else
-            OpenFile tFile = ThreadedKernel.fileSystem.open(fileName, false);
+        OpenFile tFile;
+    	if(fileName == null){
+            tFile = ThreadedKernel.fileSystem.open(fileName, true);
+        }
+        else{
+            tFile = ThreadedKernel.fileSystem.open(fileName, false);
+        }
 
         for(int i = 0; i < MAX_SLOTS; i++) {
     		if(myFiles[i] == null) {
@@ -444,7 +447,7 @@ public class UserProcess {
     		}    		
     	}
         //no open slots available
-        tFile.close();
+        // tFile.close();
         return -1;
     }
 
@@ -479,9 +482,9 @@ public class UserProcess {
 	}
     }
 
-	int MAX_LENGTH = 255			    // max length in terms of bytes
-	int MAX_SLOTS = 16			    // max slots for concurrency
-	OpenFile myFiles = new OpenFile[16];   // array of 16 OpenFiles
+	int MAX_LENGTH = 255;			    // max length in terms of bytes
+	int MAX_SLOTS = 16;			    // max slots for concurrency
+	OpenFile[] myFiles = new OpenFile[16];   // array of 16 OpenFiles
 
     /** The program being run by this process. */
     protected Coff coff;
