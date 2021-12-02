@@ -523,31 +523,34 @@ public class UserProcess {
 		return 0;
     }
 	
-    public int handleWrite(int a0, int a1, int a2) {
-		if ((a0 < 0) || (a0 > 15)) {
-			return -1;
-		}
-		
-		//question about this thing
-		if (a1 == 0) {
-			return -1;
-		}
-		
-		byte[] vaddr_content = new byte[a2];
-		
-		int page_buffer = readVirtualMemory(a0,vaddr_content);
-		
-		if ((page_buffer == -1) || (page_buffer != a2)) {
-			return -1;
-		} 
-		
-		int numBytesWrite = myFiles[a0].write(vaddr_content,0,a2);
-		
-		if ((numBytesWrite <= 0) || (page_buffer != numBytesWrite)) {
-			return -1;
-		}
-		
-    	return numBytesWrite;
+    public int handleWrite(int slotnum, int vaddr, int numbytes) {
+        if ((slotnum < 0) || (slotnum > 15)) {
+            return -1;
+        }
+        
+        if (vaddr == 0) {
+            return -1;
+        }
+        
+        byte[] vaddr_content = new byte[numbytes];
+        
+        int page_buffer = readVirtualMemory(vaddr,vaddr_content);
+        
+        if ((page_buffer == -1) || (page_buffer != numbytes)) {
+            return -1;
+        } 
+        
+        int numBytesWrite = myFiles[slotnum].write(vaddr_content,0,numbytes);
+        
+        if (numBytesWrite <= 0) {
+        	return -1;
+        }
+        
+        if (numBytesWrite == page_buffer) {
+        	return numBytesWrite;
+        }
+        
+        return -1;
     }
 
 	/**
